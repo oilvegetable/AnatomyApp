@@ -25,6 +25,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   List<String> favoriteMethods = [];
+  bool isGridView = false;
 
   final List<String> _moduleNames = ['3D 解剖模块', '解剖方法列表', '收藏夹'];
 
@@ -52,6 +53,7 @@ class _HomePageState extends State<HomePage> {
       AnatomicalMethodsList(
         favoriteMethods: favoriteMethods,
         onFavoriteToggle: _toggleFavorite,
+        isGridView: isGridView,
       ),
       FavoritesPage(
         favoriteMethods: favoriteMethods,
@@ -62,6 +64,16 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_moduleNames[_selectedIndex]),
+        actions: [
+          IconButton(
+            onPressed: 
+            () {
+              setState(() {
+                isGridView = !isGridView;
+              });
+            },
+            icon: Icon(isGridView ? Icons.list : Icons.grid_view),)
+        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -242,10 +254,12 @@ class _Anatomical3DModuleState extends State<Anatomical3DModule> {
 class AnatomicalMethodsList extends StatefulWidget {
   final List<String> favoriteMethods;
   final Function(String) onFavoriteToggle;
+  final bool isGridView;
 
   AnatomicalMethodsList({
     required this.favoriteMethods,
     required this.onFavoriteToggle,
+    required this.isGridView,
   });
 
   @override
@@ -277,53 +291,118 @@ class _AnatomicalMethodsListState extends State<AnatomicalMethodsList> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextField(
-            onChanged: (value) => _filterMethods(value),
-            decoration: InputDecoration(
-              labelText: '搜索解剖方法',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.search),
+    return Scaffold(
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              onChanged: (value) => _filterMethods(value),
+              decoration: InputDecoration(
+                labelText: '搜索解剖方法',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
+              ),
             ),
           ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: filteredMethods.length,
-            itemBuilder: (context, index) {
-              String method = filteredMethods[index];
-              bool isFavorite = widget.favoriteMethods.contains(method);
-              return ListTile(
-                leading: Icon(Icons.book),
-                title: Text(method),
-                trailing: IconButton(
-                  icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorite ? Colors.red : null,
-                  ),
-                  onPressed: () => widget.onFavoriteToggle(method),
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AnatomicalMethodDetailPage(
-                        methodName: method,
-                        methodDescription: '这是$method的详细介绍。',
-                        isFavorite: isFavorite,
-                        onFavoriteToggle: () => widget.onFavoriteToggle(method),
-                      ),
+          Expanded(
+            child: widget.isGridView ?
+            GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 3 / 2,
+              ),
+              itemCount: filteredMethods.length,
+              itemBuilder: (context, index) {
+                String method = filteredMethods[index];
+                bool isFavorite = widget.favoriteMethods.contains(method);
+                return GestureDetector(
+                  onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AnatomicalMethodDetailPage(
+                            methodName: method,
+                            methodDescription: '这是$method的详细介绍。',
+                            isFavorite: isFavorite,
+                            onFavoriteToggle: () =>
+                                widget.onFavoriteToggle(method),
+                          )
+                        )
+                      );
+                  },
+                  child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.zero,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Placeholder(
+                                  fallbackHeight: 65,
+                                  fallbackWidth: double.infinity, // 占据宽度的最大值
+                                ),
+                                Expanded(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(method, maxLines: 3, overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 14),), // 防止文字过长溢出
+                                      IconButton(
+                                        icon: Icon(
+                                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                                          color: isFavorite ? Colors.red : null,
+                                          size: 20,
+                                        ),
+                                        onPressed: () => widget.onFavoriteToggle(method),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                );
+              },
+            )
+            : ListView.builder(
+              itemCount: filteredMethods.length,
+              itemBuilder: (context, index) {
+                String method = filteredMethods[index];
+                bool isFavorite = widget.favoriteMethods.contains(method);
+                return ListTile(
+                  leading: Icon(Icons.book),
+                  title: Text(method),
+                  trailing: IconButton(
+                    icon: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: isFavorite ? Colors.red : null,
                     ),
-                  );
-                },
-              );
-            },
+                    onPressed: () => widget.onFavoriteToggle(method),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AnatomicalMethodDetailPage(
+                          methodName: method,
+                          methodDescription: '这是$method的详细介绍。',
+                          isFavorite: isFavorite,
+                          onFavoriteToggle: () => widget.onFavoriteToggle(method),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
