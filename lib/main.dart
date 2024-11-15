@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'global.dart';
 
 void main() {
   runApp(MyApp());
@@ -25,7 +28,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   List<String> favoriteMethods = [];
-  bool isGridView = false;
 
   final List<String> _moduleNames = ['3D 解剖模块', '解剖方法列表', '收藏夹'];
 
@@ -33,15 +35,15 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedIndex = index;
     });
-    Navigator.pop(context); // 关闭抽屉菜单
+    Navigator.pop(context); // 关闭抽弧菜单
   }
 
-  void _toggleFavorite(String method) {
+  void _toggleFavorite(String methodId) {
     setState(() {
-      if (favoriteMethods.contains(method)) {
-        favoriteMethods.remove(method);
+      if (favoriteMethods.contains(methodId)) {
+        favoriteMethods.remove(methodId);
       } else {
-        favoriteMethods.add(method);
+        favoriteMethods.add(methodId);
       }
     });
   }
@@ -53,7 +55,6 @@ class _HomePageState extends State<HomePage> {
       AnatomicalMethodsList(
         favoriteMethods: favoriteMethods,
         onFavoriteToggle: _toggleFavorite,
-        isGridView: isGridView,
       ),
       FavoritesPage(
         favoriteMethods: favoriteMethods,
@@ -64,16 +65,6 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_moduleNames[_selectedIndex]),
-        actions: [
-          IconButton(
-            onPressed: 
-            () {
-              setState(() {
-                isGridView = !isGridView;
-              });
-            },
-            icon: Icon(isGridView ? Icons.list : Icons.grid_view),)
-        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -114,139 +105,11 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class Anatomical3DModule extends StatefulWidget {
-  @override
-  _Anatomical3DModuleState createState() => _Anatomical3DModuleState();
-}
-
-class _Anatomical3DModuleState extends State<Anatomical3DModule> {
-  late TransformationController _transformationController;
-  TapDownDetails? _doubleTapDetails;
-
-  @override
-  void initState() {
-    super.initState();
-    _transformationController = TransformationController();
-  }
-
-  @override
-  void dispose() {
-    _transformationController.dispose();
-    super.dispose();
-  }
-
-  void _showMethodDetailBottomSheet(BuildContext context, String methodName) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 5 / 6,
-          width: double.infinity,
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                methodName,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              Expanded(
-                child: Text(
-                  '这是 $methodName 的详细介绍。',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
+class Anatomical3DModule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        GestureDetector(
-          onDoubleTapDown: (details) => _doubleTapDetails = details,
-          onDoubleTap: () {
-            if (_transformationController.value != Matrix4.identity()) {
-              _transformationController.value = Matrix4.identity();
-            } else if (_doubleTapDetails != null) {
-              final position = _doubleTapDetails!.localPosition;
-              _transformationController.value = Matrix4.identity()
-                ..translate(-position.dx * 2, -position.dy * 2)
-                ..scale(2.0);
-            }
-          },
-          child: InteractiveViewer(
-            transformationController: _transformationController,
-            panEnabled: true,
-            scaleEnabled: true,
-            minScale: 1.0,
-            maxScale: 4.0,
-            child: Image.asset(
-              'assets/images/head.jpg',
-              width: double.maxFinite,
-              height: double.maxFinite,
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-        Positioned(
-          top: 100,
-          left: 150,
-          child: Column(
-            children: [
-              GestureDetector(
-                onTap: () => _showMethodDetailBottomSheet(context, '部位 1'),
-                child: Icon(
-                  Icons.location_on,
-                  color: Colors.red,
-                  size: 35,
-                ),
-              ),
-              Text('部位 1', style: TextStyle(color: Colors.red, fontSize: 20)),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 200,
-          right: 100,
-          child: Column(
-            children: [
-              GestureDetector(
-                onTap: () => _showMethodDetailBottomSheet(context, '部位 2'),
-                child: Icon(
-                  Icons.location_on,
-                  color: Colors.blue,
-                  size: 35,
-                ),
-              ),
-              Text('部位 2', style: TextStyle(color: Colors.blue, fontSize: 20)),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 150,
-          left: 50,
-          child: Column(
-            children: [
-              GestureDetector(
-                onTap: () => _showMethodDetailBottomSheet(context, '部位 3'),
-                child: Icon(
-                  Icons.location_on,
-                  color: Colors.green,
-                  size: 35,
-                ),
-              ),
-              Text('部位 3', style: TextStyle(color: Colors.green, fontSize: 20)),
-            ],
-          ),
-        ),
-      ],
+    return Center(
+      child: Text('3D 解剖模块'),
     );
   }
 }
@@ -254,12 +117,10 @@ class _Anatomical3DModuleState extends State<Anatomical3DModule> {
 class AnatomicalMethodsList extends StatefulWidget {
   final List<String> favoriteMethods;
   final Function(String) onFavoriteToggle;
-  final bool isGridView;
 
   AnatomicalMethodsList({
     required this.favoriteMethods,
     required this.onFavoriteToggle,
-    required this.isGridView,
   });
 
   @override
@@ -267,142 +128,85 @@ class AnatomicalMethodsList extends StatefulWidget {
 }
 
 class _AnatomicalMethodsListState extends State<AnatomicalMethodsList> {
-  List<String> allMethods = List.generate(10, (index) => '解剖方法 ${index + 1}');
-  List<String> filteredMethods = [];
+  late Future<Map<String, List<Map<String, dynamic>>>> _methodsByLocation;
 
   @override
   void initState() {
     super.initState();
-    filteredMethods = allMethods; // 初始状态下，显示全部方法
+    _methodsByLocation = fetchMethodsByLocation();
   }
 
-  void _filterMethods(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        filteredMethods = allMethods;
-      } else {
-        filteredMethods = allMethods
-            .where((method) =>
-                method.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+  Future<Map<String, List<Map<String, dynamic>>>> fetchMethodsByLocation() async {
+    final response = await http.get(Uri.parse(server_url + '/api/files/all'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> methods = json.decode(response.body);
+      Map<String, List<Map<String, dynamic>>> categorizedMethods = {};
+
+      for (var method in methods) {
+        String location = method['location'];
+        categorizedMethods.putIfAbsent(location, () => []);
+        categorizedMethods[location]!.add(method);
       }
-    });
+
+      for (var methodList in categorizedMethods.values) {
+        methodList.sort((a, b) => a['priority'].compareTo(b['priority']));
+      }
+
+      return categorizedMethods;
+    } else {
+      throw Exception('Failed to load methods');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              onChanged: (value) => _filterMethods(value),
-              decoration: InputDecoration(
-                labelText: '搜索解剖方法',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.search),
-              ),
-            ),
-          ),
-          Expanded(
-            child: widget.isGridView ?
-            GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 3 / 2,
-              ),
-              itemCount: filteredMethods.length,
-              itemBuilder: (context, index) {
-                String method = filteredMethods[index];
-                bool isFavorite = widget.favoriteMethods.contains(method);
-                return GestureDetector(
-                  onTap: () {
+    return FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
+      future: _methodsByLocation,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Failed to load methods'));
+        } else {
+          Map<String, List<Map<String, dynamic>>> methodsByLocation = snapshot.data!;
+          return ListView(
+            children: methodsByLocation.entries.map((entry) {
+              String location = entry.key;
+              List<Map<String, dynamic>> methods = entry.value;
+
+              return ExpansionTile(
+                title: Text(location),
+                children: methods.map((method) {
+                  bool isFavorite = widget.favoriteMethods.contains(method['file_id']);
+                  return ListTile(
+                    title: Text(method['filename']),
+                    trailing: IconButton(
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : null,
+                      ),
+                      onPressed: () => widget.onFavoriteToggle(method['file_id']),
+                    ),
+                    onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => AnatomicalMethodDetailPage(
-                            methodName: method,
-                            methodDescription: '这是$method的详细介绍。',
+                            methodDetail: method,
                             isFavorite: isFavorite,
-                            onFavoriteToggle: () =>
-                                widget.onFavoriteToggle(method),
-                          )
-                        )
+                            onFavoriteToggle: () => widget.onFavoriteToggle(method['file_id']),
+                          ),
+                        ),
                       );
-                  },
-                  child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Placeholder(
-                                  fallbackHeight: 65,
-                                  fallbackWidth: double.infinity, // 占据宽度的最大值
-                                ),
-                                Expanded(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(method, maxLines: 3, overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 14),), // 防止文字过长溢出
-                                      IconButton(
-                                        icon: Icon(
-                                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                                          color: isFavorite ? Colors.red : null,
-                                          size: 20,
-                                        ),
-                                        onPressed: () => widget.onFavoriteToggle(method),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                );
-              },
-            )
-            : ListView.builder(
-              itemCount: filteredMethods.length,
-              itemBuilder: (context, index) {
-                String method = filteredMethods[index];
-                bool isFavorite = widget.favoriteMethods.contains(method);
-                return ListTile(
-                  leading: Icon(Icons.book),
-                  title: Text(method),
-                  trailing: IconButton(
-                    icon: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : null,
-                    ),
-                    onPressed: () => widget.onFavoriteToggle(method),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AnatomicalMethodDetailPage(
-                          methodName: method,
-                          methodDescription: '这是$method的详细介绍。',
-                          isFavorite: isFavorite,
-                          onFavoriteToggle: () => widget.onFavoriteToggle(method),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+                    },
+                  );
+                }).toList(),
+              );
+            }).toList(),
+          );
+        }
+      },
     );
   }
 }
@@ -416,59 +220,239 @@ class FavoritesPage extends StatelessWidget {
     required this.onFavoriteToggle,
   });
 
+  Future<List<Map<String, dynamic>>> fetchFavoriteMethods(List<String> favoriteMethods) async {
+    final response = await http.get(Uri.parse(server_url + '/api/files/all'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> methods = json.decode(response.body);
+      List<Map<String, dynamic>> favoriteMethodsList = methods
+          .where((method) => favoriteMethods.contains(method['file_id']))
+          .map((method) => method as Map<String, dynamic>)
+          .toList();
+      return favoriteMethodsList;
+    } else {
+      throw Exception('Failed to load favorite methods');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: favoriteMethods.length,
-      itemBuilder: (context, index) {
-        String method = favoriteMethods[index];
-        return ListTile(
-          leading: Icon(Icons.book),
-          title: Text(method),
-          trailing: IconButton(
-            icon: Icon(
-              Icons.favorite,
-              color: Colors.red,
-            ),
-            onPressed: () => onFavoriteToggle(method),
-          ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AnatomicalMethodDetailPage(
-                  methodName: method,
-                  methodDescription: '这是$method的详细介绍。',
-                  isFavorite: true,
-                  onFavoriteToggle: () => onFavoriteToggle(method),
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: fetchFavoriteMethods(favoriteMethods),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Failed to load favorite methods'));
+        } else {
+          List<Map<String, dynamic>> favorites = snapshot.data!;
+          return ListView.builder(
+            itemCount: favorites.length,
+            itemBuilder: (context, index) {
+              var method = favorites[index];
+              return ListTile(
+                title: Text(method['filename']),
+                trailing: IconButton(
+                  icon: Icon(
+                    Icons.favorite,
+                    color: Colors.red,
+                  ),
+                  onPressed: () => onFavoriteToggle(method['file_id']),
                 ),
-              ),
-            );
-          },
-        );
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AnatomicalMethodDetailPage(
+                        methodDetail: method,
+                        isFavorite: true,
+                        onFavoriteToggle: () => onFavoriteToggle(method['file_id']),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        }
       },
     );
   }
 }
 
 class AnatomicalMethodDetailPage extends StatelessWidget {
-  final String methodName;
-  final String methodDescription;
+  final Map<String, dynamic> methodDetail;
   final bool isFavorite;
   final VoidCallback onFavoriteToggle;
 
   AnatomicalMethodDetailPage({
-    required this.methodName,
-    required this.methodDescription,
+    required this.methodDetail,
     required this.isFavorite,
     required this.onFavoriteToggle,
   });
+
+  Map _getTextStyleFromStyle(String styleName) {
+    // 根据 Word 样式名返回不同的 TextStyle
+    switch (styleName) {
+      case 'Heading 1':
+        return {
+          'fontSize': 32.0,
+          'fontWeight': FontWeight.bold,
+          'color': const Color.fromARGB(255, 47, 156, 246),
+        };
+      case 'Heading 2':
+        return {
+          'fontSize': 28.0,
+          'fontWeight': FontWeight.bold,
+          'color': Colors.black,
+        };
+      case 'Heading 3':
+        return {
+          'fontSize': 24.0,
+          'fontWeight': FontWeight.bold,
+          'color': Colors.black,
+        };
+      case 'Normal':
+        return {
+          'fontSize': 14.0,
+          'fontWeight': FontWeight.normal,
+          'fontStyle': FontStyle.normal,
+          'color': Colors.black,
+        };
+      case 'Subtitle':
+        return {
+          'fontSize': 18.0,
+          'fontStyle': FontStyle.italic,
+          'color': Colors.grey,
+        };
+      // 如果你有更多的自定义样式，可以继续添加
+      default:
+        return {
+          'fontSize': 14.0,
+          'fontWeight': FontWeight.normal,
+          'fontStyle': FontStyle.normal,
+          'color': _getColorFromRGBString([0,0,0]),
+        };
+    }
+  }
+
+  // 根据 alignment 字符串值返回对应的 Alignment
+  Alignment _getAlignment(int? alignment) {
+    switch (alignment) {
+      case 1:
+        return Alignment.center;
+      case 2:
+        return Alignment.centerRight;
+      default:
+        return Alignment.centerLeft;
+    }
+  }
+
+    Color _getColorFromRGBString(List colorParts) {
+
+    if (colorParts.length == 3) {
+      // 将 RGB 转为十六进制并返回颜色值
+      return Color.fromRGBO(colorParts[0], colorParts[1], colorParts[2], 1.0);
+    } else {
+      // 如果解析失败，返回默认颜色
+      return Colors.black;
+    }
+  }
+
+  List<Widget> buildParagraphs(List<dynamic> content) {
+    List<Widget> widgets = [];
+
+    for (var paragraph in content) {
+      List<InlineSpan> textSpans = [];
+      String text = paragraph['text'] ?? '';
+      Map textStyle = _getTextStyleFromStyle(paragraph['style']) ;
+
+      int start = 0;
+      String textBefore;
+
+      for (var image in paragraph['images']){
+        var splitPoint = image['position_in_paragraph'];
+        if (splitPoint > text.length) break;
+
+        textBefore = text.substring(start, splitPoint);
+        text = text.substring(splitPoint);
+        start = splitPoint;
+
+        textSpans.add(TextSpan(
+          text: textBefore,
+          style: TextStyle(
+            fontWeight: paragraph['font']['bold'] == true ? FontWeight.bold : textStyle['fontWeight'],
+            fontStyle: paragraph['font']['italic'] == true ? FontStyle.italic : textStyle['fontStyle'],
+            decoration: paragraph['font']['underline'] == true ? TextDecoration.underline : TextDecoration.none,
+            fontSize: paragraph['font']['size'] != null ? paragraph['font']['size'] : textStyle['fontSize'],
+            color: paragraph['font']['color'] != null 
+              ? _getColorFromRGBString(paragraph['font']['color']) // 使用转换方法
+              : textStyle['fontColor'],
+            fontFamily: paragraph['font']['name'],
+          ),
+          
+        ));
+
+        textSpans.add(WidgetSpan(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Image.network(
+                server_url + image['image_link'],  // 这里是图片链接
+                loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                  if (loadingProgress == null) {
+                    return child;
+                  } else {
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
+                            : null,
+                      ),
+                    );
+                  }
+                },
+                errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) {
+                  return Icon(Icons.error, color: Colors.red);
+                },
+              ),
+            ),
+          ));
+      }
+      // 循环结束后补上最后一段文字
+      textSpans.add(TextSpan(
+        text: text,
+        style: TextStyle(
+            fontWeight: paragraph['font']['bold'] == true ? FontWeight.bold : textStyle['fontWeight'],
+            fontStyle: paragraph['font']['italic'] == true ? FontStyle.italic : textStyle['fontStyle'],
+            decoration: paragraph['font']['underline'] == true ? TextDecoration.underline : TextDecoration.none,
+            fontSize: paragraph['font']['size'] != null ? paragraph['font']['size'] : textStyle['fontSize'],
+            color: paragraph['font']['color'] != null 
+              ? _getColorFromRGBString(paragraph['font']['color']) // 使用转换方法
+              : textStyle['fontColor'],
+            fontFamily: paragraph['font']['name'],
+            letterSpacing: paragraph['font']['strikethrough'] == true ? 2.0 : 0.0, // Example for strikethrough effect
+        ),
+      ));
+
+      // 用 Text.rich 显示文本和图片
+      widgets.add(Align(
+        alignment: _getAlignment(paragraph['alignment']),
+        child: Text.rich(
+          TextSpan(
+            children: textSpans,
+          ),
+        ),
+      ));
+    }
+
+    return widgets;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(methodName),
+        title: Text('方法详情'),
         actions: [
           IconButton(
             icon: Icon(
@@ -479,18 +463,10 @@ class AnatomicalMethodDetailPage extends StatelessWidget {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            height: 200,
-            child: Center(child: Placeholder())
-          ),
-          SizedBox(height: 16),
-          Text("这里是${methodName}的详细介绍。"),
-        ],
+      body: ListView(
+        padding: EdgeInsets.all(16),
+        children: buildParagraphs(methodDetail['content']), 
       ),
     );
   }
 }
-  
