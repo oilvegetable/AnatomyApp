@@ -16,6 +16,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   http: ^1.2.2
+  webview_flutter: ^4.10.0
 
   flutter_lints: ^4.0.0
 

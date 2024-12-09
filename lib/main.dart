@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:convert';
 import 'global.dart';
 
@@ -105,12 +106,26 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class Anatomical3DModule extends StatelessWidget {
+class Anatomical3DModule extends StatefulWidget {
+  @override
+  _Anatomical3DModule createState() => _Anatomical3DModule();
+}
+
+class _Anatomical3DModule extends State<Anatomical3DModule> {
+  late WebViewController _webViewController;
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化 WebViewController
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)  // 允许 JavaScript
+      ..loadRequest(Uri.parse(unity_url));  // 加载 URL
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text('3D 解剖模块'),
-    );
+    return WebViewWidget(controller: _webViewController);
   }
 }
 
